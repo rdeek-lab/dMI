@@ -1,0 +1,81 @@
+---
+output: github_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# `dMI`: Distance-based mutual information
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+`dMI` is an R package for multivariate global association testing in multiomics studies using distance-based mutual information. The package implements a nonparametric density estimation procedure of distance-based mutual information using k-nearest neighbor (kNN) distances and a permutation test for independence.
+
+## Installation
+
+You can install the latest version of `dMI` from GitHub using:
+
+```r
+install.packages("remotes")
+remotes::install_github("rdeek-lab/dMI")
+```
+
+## Documentation and examples
+
+Help documentation for the `dMI` package is available in R. After installing the package from GitHub via `remotes` and loading it with `library()` use `?` to access the documentation for the main function in the package. I.e.
+
+```r
+?dMI
+```
+
+Below is an example of how to run the `dMI()` function using the demo data including the package.
+
+First, load the two demo data sets: `microbiomeData` and `hostData`. We are interested in testing the global association between the microbiome and host omics data (e.g., metabolite concentrations) collected on 100 individuals. Next, calculate the ensemble distances. In the example below, the Aitchison and Bray-Curtis dissimilarities are used for the microbiome data. Euclidean and Manhattan distances are used for the host omics data. Finally, we implement the `dMI()` function, which performs estimation and testing. `dMI()` returns a permutation p-value for the null hypothesis of independence.
+
+```r
+library(dMI)
+library(vegan)
+
+# set seed
+set.seed(1)
+
+# load sample data
+data("microbiomeData")
+data("hostData")
+
+# microbiome distances
+mb.aitchison = vegan::vegdist(microbiomeData, method = "aitchison", pseudocount = 1)
+mb.bray = vegan::vegdist(microbiomeData, method = "bray")
+mb.ensDist = 1/2*mb.aitchison + 1/2*mb.bray # ensemble with equal weights
+
+# host distances
+host.euclidean = vegan::vegdist(hostData, method = "euclidean")
+host.manhattan = vegan::vegdist(hostData, method = "manhattan")
+host.ensDist = 1/2*host.euclidean + 1/2*host.manhattan # ensemble with equal weights
+
+# number of neighbors
+n = nrow(microbiomeData)
+k = ceiling(sqrt(n*(n-1)/2)) # k must be a whole number
+
+# dMI
+dMI.pval = dMI(D.x = mb.ensDist,   # distance for X
+               D.y = host.ensDist, # distance for Y
+               kbar = 1:k,         # vector of nearest neighbors
+               n.perm = 999,       # number of permutations
+               n.cores = 1,        # number of cores for parallelization (1 = no parallelization)
+               MI = FALSE
+               )
+dMI.pval
+```
+
+
+## Contact
+
+To report any bugs, issues, or suggestions please use the issue feature on GitHub or contact the maintainer Rebecca Deek via [email](mailto:rdeek@pitt.edu).
